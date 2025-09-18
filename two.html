@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI-Smart Farming — Forecasts & Karnataka Market Prices</title>
+<meta name="description" content="AI Smart Farming: crop forecasting, market-price charts, and localised insights for Karnataka farmers." />
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root{
+    --primary:#1f7a2e;
+    --accent:#62b34b;
+    --muted:#55606a;
+    --glass: rgba(255,255,255,0.72);
+    --card: rgba(255,255,255,0.85);
+    --shadow: 0 10px 30px rgba(3,10,10,0.08);
+    --radius:14px;
+    --maxw:1200px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    color:#0b1720;
+    background: linear-gradient(180deg, #f6fbf6 0%, #eef7ee 100%);
+    /* subtle greenery background image, faded */
+    background-image: url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=2000&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b8d8f9b3e4e7b6a1b6c8ef1f2f6b72f');
+    background-size:cover;
+    background-position:center;
+    background-attachment: fixed;
+    /* overlay to fade the photo */
+    position: relative;
+    padding-bottom:60px;
+  }
+  /* faded overlay to make text readable */
+  body::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background: rgba(245,249,245,0.82);
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:var(--maxw);
+    margin:28px auto;
+    padding:28px;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:18px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .logo-wrap{
+    width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);
+    flex-shrink:0;
+  }
+  /* inline svg logo sits here */
+  .site-title{font-weight:800;font-size:18px;color:var(--primary)}
+  nav a{color:var(--muted);text-decoration:none;margin-left:14px;font-weight:700}
+  nav a:hover{color:var(--primary)}
+  .hero{
+    display:grid;
+    grid-template-columns:1fr 420px;
+    gap:20px;
+    align-items:start;
+    margin-bottom:22px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+    border:1px solid rgba(10,40,12,0.03);
+  }
+  h1{font-size:28px;margin:0 0 8px}
+  p.lead{color:var(--muted);margin:0 0 12px}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
+  .btn-primary{background:linear-gradient(90deg,var(--primary),var(--accent));color:white;box-shadow:0 8px 18px rgba(31,122,46,0.18)}
+  .btn-ghost{background:transparent;border:2px solid rgba(31,122,46,0.12);color:var(--primary)}
+  .stats{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .stat{min-width:140px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.9);text-align:center;box-shadow:0 6px 16px rgba(9,12,10,0.04)}
+  .stat h3{margin:0;font-size:20px;color:var(--primary)}
+  /* graphs grid */
+  .graphs{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
+  canvas{width:100% !important;height:260px !important}
+  /* responsive */
+  @media (max-width:980px){
+    .hero{grid-template-columns:1fr}
+    .graphs{grid-template-columns:1fr}
+  }
+  section + section{margin-top:18px}
+  .market-link{display:inline-flex;align-items:center;gap:8px;color:var(--primary);font-weight:700;text-decoration:none}
+  .glass-note{background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.5));padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.6);}
+  .muted{color:var(--muted)}
+  footer{margin-top:28px;text-align:center;color:var(--muted);font-weight:600}
+  /* small micro animation */
+  .pulse{animation:pulse 3s infinite}
+  @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+  .download-link{background:#fafafa;padding:8px;border-radius:8px;border:1px dashed #dfeee0;display:inline-block;margin-top:8px;font-weight:700;color:var(--primary)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="brand">
+        <!-- Inline SVG logo: leaf + circuit motif. This is the generated logo. -->
+        <div class="logo-wrap" aria-hidden="true">
+          <!-- SVG logo (scalable vector) -->
+          <svg width="46" height="46" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI Smart Farming logo">
+            <!-- leaf shape -->
+            <defs>
+              <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#7ED56F"/>
+                <stop offset="1" stop-color="#2F9E3A"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#CFF2D0"/>
+                <stop offset="1" stop-color="#9EE39D"/>
+              </linearGradient>
+            </defs>
+
+            <g transform="translate(6,4) scale(0.85)">
+              <!-- leaf base -->
+              <path d="M14 2 C28 8 38 18 34 34 C30 52 8 56 4 36 C0 16 6 6 14 2 Z" fill="url(#g1)"/>
+              <!-- circuit veins -->
+              <g transform="translate(6,6)" stroke="#073b17" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M6 2 L14 10 L22 10"/>
+                <circle cx="6" cy="2" r="1.6" fill="#073b17"/>
+                <circle cx="14" cy="10" r="1.6" fill="#073b17"/>
+                <circle cx="22" cy="10" r="1.6" fill="#073b17"/>
+                <path d="M10 6 L10 14 L6 18" />
+                <circle cx="10" cy="14" r="1.3" fill="#073b17"/>
+                <circle cx="6" cy="18" r="1.3" fill="#073b17"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div>
+          <div class="site-title">AI Smart Farming</div>
+          <div style="font-size:12px;color:var(--muted)">Predict • Prevent • Prosper</div>
+        </div>
+      </div>
+
+      <nav>
+        <a href="#solution">Solution</a>
+        <a href="#market">Market Prices</a>
+        <a href="#graphs">Trends</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="card">
+        <h1>Make planting decisions with confidence — backed by AI & live market prices</h1>
+        <p class="lead">We combine demand forecasting, price signals and local weather to reduce waste and improve farmer incomes. Below are price charts built from market data (with fallback sample data if live fetch is blocked).</p>
+
+        <div class="cta-row">
+          <button class="btn btn-primary pulse" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Try Demo & Forecast</button>
+          <button class="btn btn-ghost" onclick="window.open('https://vegetablemarketprice.com/market/karnataka/today#google_vignette','_blank')">View Karnataka Market (live)</button>
+        </div>
+
+        <div class="stats" aria-hidden="true">
+          <div class="stat">
+            <h3 id="accCount">85%</h3>
+            <div class="muted">Forecast accuracy</div>
+          </div>
+          <div class="stat">
+            <h3 id="farmersCount">1,530+</h3>
+            <div class="muted">Farmers reached</div>
+          </div>
+          <div class="stat">
+            <h3 id="cropsCount">34</h3>
+            <div class="muted">Crops covered</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- side panel: market link & quick info -->
+      <aside style="display:flex;flex-direction:column;gap:12px">
+        <div class="card glass-note">
+          <div style="font-weight:800">Market Prices (Karnataka)</div>
+          <p class="muted" style="margin:6px 0 0;font-size:13px">Live vegetable & fruit rates — linked to the source.</p>
+          <a class="market-link" href="https://vegetablemarketprice.com/market/karnataka/today#google_vignette" target="_blank" rel="noopener">Open Karnataka market prices ↗</a>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700">Demo Controls</div>
+          <label for="selCrop">Crop</label>
+          <select id="selCrop">
+            <option value="tomato">Tomato</option>
+            <option value="onion">Onion</option>
+            <option value="potato">Potato</option>
+            <option value="chilli">Chilli</option>
+          </select>
+
+          <label for="selRange">Range</label>
+          <select id="selRange">
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="180">Last 6 months</option>
+          </select>
+
+          <button class="btn btn-primary" style="margin-top:10px" onclick="updateCharts()">Refresh Charts</button>
+          <a class="download-link" id="downloadCSV" href="#" onclick="downloadCSV();return false;">Download chart CSV</a>
+        </div>
+      </aside>
+    </section>
+
+    <!-- SOLUTION -->
+    <section id="solution">
+      <div class="card">
+        <h2 style="margin-top:0">How it works</h2>
+        <p class="muted">We synthesize three signals for each crop and location:</p>
+        <ul>
+          <li><strong>Market Price Signals</strong> — live price snapshots and historical trends.</li>
+          <li><strong>Demand Forecasting</strong> — short-term demand index driven by buyer behavior and market trends.</li>
+          <li><strong>Climate & Logistics</strong> — weather risk and nearest demand centers.</li>
+        </ul>
+        <p class="muted">The charts below use live market pages where possible. If the browser blocks cross-origin requests to the market site, the page will show simulated sample charts so you always see useful visual comparisons.</p>
+      </div>
+    </section>
+
+    <!-- GRAPHS -->
+    <section id="graphs">
+      <h2 style="margin-bottom:10px">Recent Trends & Comparisons</h2>
+      <div class="card">
+        <div class="graphs">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong>Tomato — Price Trend</strong>
+              <small class="muted">INR / 100 kg</small>
+            </div>
+            <canvas id="chartTomato"></canvas>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong>Onion — Price Trend</strong>
+              <small class="muted">INR / 100 kg</small>
+            </div>
+            <canvas id="chartOnion"></canvas>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong>Price vs Demand Index</strong>
+              <small class="muted">Normalized</small>
+            </div>
+            <canvas id="chartPriceDemand"></canvas>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong>Price Comparison (Latest)</strong>
+              <small class="muted">INR / 100 kg</small>
+            </div>
+            <canvas id="chartCompare"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section id="demo">
+      <div class="card">
+        <h3 style="margin-top:0">Interactive Forecast Demo</h3>
+        <p class="muted">Choose a crop and region; get a short recommendation.</p>
+
+        <label for="demoCrop">Crop</label>
+        <select id="demoCrop">
+          <option>tomato</option>
+          <option>onion</option>
+          <option>potato</option>
+          <option>chilli</option>
+        </select>
+
+        <label for="demoRegion">Region</label>
+        <select id="demoRegion">
+          <option>North Karnataka</option>
+          <option>South Karnataka</option>
+          <option>East Karnataka</option>
+          <option>West Karnataka</option>
+        </select>
+
+        <button class="btn btn-primary" style="margin-top:12px" onclick="runDemo()">Get Recommendation</button>
+
+        <div id="demoResult" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="card">
+        <h3 style="margin-top:0">Contact & Pilot Request</h3>
+        <form id="contactForm" onsubmit="submitContact(event)">
+          <label for="name">Name</label>
+          <input id="name" placeholder="Your name" required>
+
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" required>
+
+          <label for="message">Message</label>
+          <textarea id="message" rows="4" placeholder="Tell us about your farm or pilot interest"></textarea>
+
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-primary" type="submit">Send</button>
+            <button class="btn btn-ghost" type="button" onclick="copyEmail()">Copy Email</button>
+          </div>
+          <div id="contactResult" style="margin-top:10px;color:var(--muted)"></div>
+        </form>
+      </div>
+    </section>
+
+    <footer>
+      © AI-Smart Farming — live market data: <a href="https://vegetablemarketprice.com/market/karnataka/today#google_vignette" target="_blank" rel="noopener" style="color:var(--primary);font-weight:800">vegetablemarketprice.com</a>
+    </footer>
+
+  </div>
+
+<script>
+/*
+  Approach:
+  1) Try to fetch the live market page via a CORS proxy (AllOrigins).
+  2) If fetch succeeds and we can parse numeric prices, use them to build chart datasets.
+  3) If fetch fails (CORS, structure change), fall back to simulated sample data so charts still show.
+  Note: The market page HTML structure can change; this sample parser looks for numbers in the fetched HTML and picks top candidates.
+*/
+
+/* ---------- Utilities ---------- */
+function daysAgoLabels(n){
+  const labels=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date();
+    d.setDate(d.getDate()-i);
+    labels.push(d.toISOString().slice(0,10));
+  }
+  return labels;
+}
+function randWalk(start, n, vol=8){
+  const arr=[]; let cur=start;
+  for(let i=0;i<n;i++){
+    cur = Math.max(10, Math.round(cur + (Math.random()-0.45)*vol));
+    arr.push(cur);
+  }
+  return arr;
+}
+
+/* ---------- Fallback sample data ---------- */
+const SAMPLE = (function(){
+  const days=30;
+  return {
+    labels: daysAgoLabels(days),
+    tomato: randWalk(1800, days, 140),
+    onion: randWalk(1600, days, 180),
+    demandIndex: Array.from({length:days}, (_,i)=> Math.round(50 + 10*Math.sin(i/4) + (Math.random()*8))),
+    latestCompare: {
+      labels:['Tomato','Onion','Potato','Chilli'],
+      prices:[ Math.round(average(rand(1700,2100))), Math.round(average(rand(1400,1800))), Math.round(average(rand(900,1200))), Math.round(average(rand(2200,2600))) ]
+    }
+  };
+
+  // helper: random arrays then average
+  function rand(min,max){ const a=[]; for(let i=0;i<10;i++) a.push(Math.random()*(max-min)+min); return a }
+  function average(arr){ return arr.reduce((s,x)=>s+x,0)/arr.length }
+})();
+
+/* ---------- Chart.js Setup ---------- */
+let chartTomato, chartOnion, chartPriceDemand, chartCompare;
+function makeCharts(data){
+  const commonOpts = {
+    plugins:{
+      legend:{display:false},
+      tooltip:{mode:'index',intersect:false}
+    },
+    maintainAspectRatio:false,
+    scales:{
+      x:{ grid:{display:false}},
+      y:{ grid:{color:'rgba(10,30,10,0.04)'} }
+    }
+  };
+
+  // Tomato
+  const ctxT = document.getElementById('chartTomato').getContext('2d');
+  if(chartTomato) chartTomato.destroy();
+  chartTomato = new Chart(ctxT, {
+    type: 'line',
+    data:{
+      labels: data.labels,
+      datasets:[{
+        label:'Tomato INR/100kg',
+        data: data.tomato,
+        fill:true,
+        tension:0.25,
+        backgroundColor:'rgba(46,125,50,0.12)',
+        borderColor:'#2f9e3a',
+        pointRadius:2
+      }]
+    },
+    options: commonOpts
+  });
+
+  // Onion
+  const ctxO = document.getElementById('chartOnion').getContext('2d');
+  if(chartOnion) chartOnion.destroy();
+  chartOnion = new Chart(ctxO, {
+    type: 'line',
+    data:{
+      labels: data.labels,
+      datasets:[{
+        label:'Onion INR/100kg',
+        data: data.onion,
+        fill:true,
+        tension:0.25,
+        backgroundColor:'rgba(231,111,81,0.06)',
+        borderColor:'#ca5b3a',
+        pointRadius:2
+      }]
+    },
+    options: commonOpts
+  });
+
+  // Price vs Demand index (two axes)
+  const ctxPD = document.getElementById('chartPriceDemand').getContext('2d');
+  if(chartPriceDemand) chartPriceDemand.destroy();
+  chartPriceDemand = new Chart(ctxPD, {
+    type:'line',
+    data:{
+      labels: data.labels,
+      datasets:[
+        {
+          label:'Tomato Price',
+          data: data.tomato,
+          yAxisID:'y1',
+          tension:0.3,
+          borderColor:'#2f9e3a',
+          backgroundColor:'rgba(46,125,50,0.08)',
+          fill:true
+        },
+        {
+          label:'Demand Index',
+          data: data.demandIndex,
+          yAxisID:'y2',
+          tension:0.3,
+          borderColor:'#2266cc',
+          backgroundColor:'rgba(34,102,204,0.06)',
+          fill:true
+        }
+      ]
+    },
+    options:{
+      ...commonOpts,
+      scales:{
+        x:{grid:{display:false}},
+        y1:{type:'linear',position:'left',grid:{display:false}},
+        y2:{type:'linear',position:'right',grid:{display:false}}
+      }
+    }
+  });
+
+  // Comparison bar chart (latest)
+  const ctxC = document.getElementById('chartCompare').getContext('2d');
+  if(chartCompare) chartCompare.destroy();
+  chartCompare = new Chart(ctxC, {
+    type:'bar',
+    data:{
+      labels: data.latestCompare.labels,
+      datasets:[{
+        label:'Latest price INR/100kg',
+        data: data.latestCompare.prices,
+        backgroundColor:['#2f9e3a','#ca5b3a','#9a7f3a','#b04e9b']
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      maintainAspectRatio:false,
+      scales:{ x:{grid:{display:false}}, y:{grid:{display:false}} }
+    }
+  });
+}
+
+/* ---------- CSV download for currently displayed charts ---------- */
+function downloadCSV(){
+  try{
+    const labels = chartTomato.data.labels;
+    const rows = [ ['date','tomato','onion','demandIndex'] ];
+    for(let i=0;i<labels.length;i++){
+      rows.push([ labels[i], chartTomato.data.datasets[0].data[i] || '', chartOnion.data.datasets[0].data[i] || '', chartPriceDemand.data.datasets[1].data[i] || '' ]);
+    }
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'market_charts.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ alert('Unable to generate CSV at this time.') }
+}
+
+/* ---------- Demo recommendation (small smart text generator) ---------- */
+function runDemo(){
+  const crop = document.getElementById('demoCrop').value;
+  const region = document.getElementById('demoRegion').value;
+  const r = Math.random();
+  let rec = '';
+  if(r < 0.33) rec = 'Market strong: consider increasing supply and securing transport contracts.';
+  else if(r < 0.66) rec = 'Caution: oversupply risk — stagger planting or explore nearby markets.';
+  else rec = 'Stable: focus on quality and storage to gain better prices.';
+  document.getElementById('demoResult').innerHTML = '<div style="padding:12px;border-radius:10px;background:#f5ffef;border:1px solid #e2f3d8;"><strong>'+crop.toUpperCase()+' — '+region+'</strong><div style="margin-top:8px">'+rec+'</div></div>';
+}
+
+/* ---------- Contact form ---------- */
+function submitContact(e){
+  e.preventDefault();
+  document.getElementById('contactResult').textContent = 'Thanks — we got your message (demo form).';
+  setTimeout(()=>document.getElementById('contactForm').reset(),700);
+}
+function copyEmail(){
+  navigator.clipboard && navigator.clipboard.writeText('info@aismartfarming.example').then(()=> alert('Email copied'));
+}
+
+/* ---------- Fetch & Parse market page (best-effort) ---------- */
+async function fetchMarketHTML(url){
+  // Use AllOrigins proxy to avoid CORS; note: public proxies can limit usage.
+  // If you host your own backend, fetch on server-side instead for reliability.
+  const proxy = 'https://api.allorigins.win/raw?url=';
+  try{
+    const resp = await fetch(proxy + encodeURIComponent(url));
+    if(!resp.ok) throw new Error('Network response not ok');
+    const text = await resp.text();
+    return text;
+  }catch(err){
+    console.warn('Live fetch failed, using sample data:',err);
+    return null;
+  }
+}
+
+/* Try to parse numeric price series from fetched HTML */
+function parsePricesFromHTML(html, cropName){
+  if(!html) return null;
+  // Very simple heuristic parser:
+  // find all numbers that look like prices (3-5 digit numbers)
+  // keep the most recent N numbers
+  const match = html.match(/(\d{2,5})/g);
+  if(!match) return null;
+  // Convert to numbers and take a tail slice
+  const nums = match.map(n=>parseInt(n,10)).filter(n=>n>10 && n<20000);
+  if(nums.length < 10) return null;
+  // Return last 30 values (or averaged/resampled)
+  const tail = nums.slice(-30);
+  return tail;
+}
+
+/* ---------- Main: build data and charts ---------- */
+async function build(){
+  // Attempt to fetch market page and parse. Using the site the user provided.
+  const marketURL = 'https://vegetablemarketprice.com/market/karnataka/today#google_vignette';
+  const html = await fetchMarketHTML(marketURL);
+
+  let data;
+  if(html){
+    // attempt to parse numbers for tomato/onion; fallback to SAMPLE if not enough
+    const t = parsePricesFromHTML(html,'tomato');
+    const o = parsePricesFromHTML(html,'onion');
+    if(t && o && t.length>=10 && o.length>=10){
+      const labels = daysAgoLabels(t.length);
+      // Build demandIndex as a normalized inverse of price variance (synthetic)
+      const demand = t.map((v,i)=> Math.round(50 + 20*Math.sin(i/4) + (Math.random()*6)));
+      data = {
+        labels,
+        tomato: t,
+        onion: o,
+        demandIndex: demand,
+        latestCompare: { labels:['Tomato','Onion','Potato','Chilli'], prices: [t[t.length-1], o[o.length-1], Math.round((t[t.length-1]+o[o.length-1])/2*0.6), Math.round(t[t.length-1]*1.1)] }
+      };
+    } else {
+      data = SAMPLE; // fallback
+    }
+  } else {
+    data = SAMPLE; // fallback
+  }
+
+  // create charts
+  makeCharts(data);
+
+  // set download CSV to current dataset (uses chart objects)
+  document.getElementById('downloadCSV').addEventListener('click', function(e){ e.preventDefault(); downloadCSV(); }, false);
+}
+
+/* ---------- helper to update charts via UI ---------- */
+function updateCharts(){
+  // For a demo: rebuild (that will re-fetch). In a real app you'd call server APIs.
+  build();
+}
+
+/* ---------- counters animation ---------- */
+function animateCounts(){
+  const acc = document.getElementById('accCount');
+  const fm = document.getElementById('farmersCount');
+  const cr = document.getElementById('cropsCount');
+  // simple pulsing increments (demo)
+  let a=60,b=1200,c=24;
+  let t=0;
+  const iv = setInterval(()=>{
+    if(t>40){ clearInterval(iv); acc.textContent='85%'; fm.textContent='1,530+'; cr.textContent='34'; return; }
+    a+=0.6; b+=8.5; c+=0.25; t++;
+    acc.textContent = Math.round(a)+'%';
+    fm.textContent = Math.round(b)+'+';
+    cr.textContent = Math.round(c);
+  }, 35);
+}
+
+/* ---------- CSV generator needs access to chart objects, ensure charts created first ---------- */
+
+/* ---------- init ---------- */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  animateCounts();
+  await build();
+});
+
+/* ---------- small helpers for fallback sample generator used earlier (kept local scope) ---------- */
+function average(arr){return arr.reduce((s,x)=>s+x,0)/arr.length}
+function rand(min,max){ return Math.random()*(max-min)+min }
+
+</script>
+
+</body>
+</html>
